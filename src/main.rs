@@ -1,5 +1,7 @@
 use convert_case::{Case, Casing};
 use dashmap::DashMap;
+use futures::stream::FuturesUnordered;
+use futures::StreamExt;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{header, Body, Method, Request, Response, Server};
 use nbt::from_gzip_reader;
@@ -77,15 +79,14 @@ async fn main() {
 }
 
 async fn update() {
+    let now = Instant::now();
     let client = reqwest::Client::builder()
         .gzip(true)
         .brotli(true)
         .build()
         .unwrap();
-    let now = Instant::now();
-    let collected_prices: DashMap<String, i64> = DashMap::new();
-    //initial request to see the amount of pages
-    let inital_response = json_request("https://api.hypixel.net/skyblock/auctions", &client).await;
+
+    let inital_response = json_request(0, &client).await;
     let page_count_response = inital_response.get("totalPages");
     let page_count: i64;
     match page_count_response {
@@ -95,30 +96,16 @@ async fn update() {
         }
         Some(x) => page_count = x.as_i64().unwrap(),
     }
+    let mut futures = FuturesUnordered::new();
 
-    for page_number in 0..page_count {
-        //println!("Page {}/{}", page_number + 1, page_count);
-        let response = json_request(
-            format!(
-                "https://api.hypixel.net/skyblock/auctions?page={}",
-                page_number
-            )
-            .as_str(),
-            &client,
-        )
-        .await;
-        if response.is_null() {
-            //we already printed the error after the request so we just try the next page
-            continue;
-        }
+    for page in 0..page_count {
+        let future = json_request(page, &client);
+        futures.push(future);
+    }
+
+    let collected_prices: DashMap<String, i64> = DashMap::new();
+    while let Some(response) = futures.next().await {
         let auctions_array = response.get("auctions");
-        if auctions_array.is_none() {
-            eprintln!(
-                "Hypixel API didn't return any info on the auctions for page number {}.",
-                page_number
-            );
-            return;
-        }
         for auction_entry in auctions_array.unwrap().as_array().into_iter().into_iter() {
             for auction in auction_entry {
                 if auction.get("bin").is_none() {
@@ -179,14 +166,14 @@ async fn update() {
             }
         }
     }
-    let elapsed = now.elapsed().as_millis();
-    println!("Parsed all auction pages in {}ms", elapsed);
     unsafe {
         DATA = format!("{:?}", collected_prices);
     }
+    println!("parsed all auctions in {}ms", now.elapsed().as_millis());
 }
 
-async fn json_request(url: &str, client: &Client) -> Value {
+async fn json_request(page: i64, client: &Client) -> Value {
+    let url = format!("https://api.hypixel.net/skyblock/auctions?page={}", page);
     let resp = client.get(url).send().await;
     if resp.is_err() {
         eprintln!("Error while sending Request: {}", resp.err().unwrap());

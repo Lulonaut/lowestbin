@@ -1,6 +1,6 @@
 [package]
 name = "lbin"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 
 [dependencies]
@@ -13,3 +13,4 @@ convert_case = "0.4.0"
 dashmap = "4.0.2"
 hyper = { version = "0.14", default-features = false, features = ["server"] }
 tokio = { version = "1.11.0", default-features = false, features = ["macros", "rt-multi-thread"] }
+futures = "0.3.17"
