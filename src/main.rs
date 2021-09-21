@@ -134,6 +134,7 @@ async fn update() {
                         //assembling the final String
                         final_id = format!("PET:{}:{}", name, rarity);
                     } else {
+                        //pet items (I think)
                         final_id = remove_color_codes(full_name[0].to_string());
                     }
                 //enchanted books
@@ -148,9 +149,8 @@ async fn update() {
                         continue;
                     }
 
-                    let mut name = remove_color_codes(nbt.i[0].tag.display.lore[0].to_string());
-                    name = name.to_case(Case::Snake).to_uppercase();
-                    final_id = name;
+                    let name = remove_color_codes(nbt.i[0].tag.display.lore[0].to_string());
+                    final_id = name.to_case(Case::Snake).to_uppercase();
                 //normal items
                 } else {
                     final_id = nbt.i[0].tag.extra_attributes.id.to_string();
