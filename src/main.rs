@@ -217,12 +217,14 @@ async fn handle(request: Request<Body>) -> Result<Response<Body>, Infallible> {
         unsafe {
             Ok(Response::builder()
                 .header(header::CONTENT_TYPE, "application/json")
+                .header("Access-Control-Allow-Origin", "*")
                 .body(Body::from(DATA.as_str()))
                 .unwrap())
         }
     } else {
         Ok(Response::builder()
             .status(404)
+            .header("Access-Control-Allow-Origin", "*")
             .body(Body::from(
                 "Not found. Available Endpoints are: /lowestbins, /lowestbins.json",
             ))
