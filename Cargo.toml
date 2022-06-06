@@ -12,5 +12,5 @@ hematite-nbt = "0.5.2"
 convert_case = "0.4.0"
 dashmap = "4.0.2"
 hyper = { version = "0.14", default-features = false, features = ["server"] }
-tokio = { version = "1.11.0", default-features = false, features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.13.1", default-features = false, features = ["macros", "rt-multi-thread"] }
 futures = "0.3.17"
